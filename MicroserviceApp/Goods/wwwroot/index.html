@@ -1,0 +1,199 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Product list</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.0/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+    <h2>Product list</h2>
+    <form name="productForm">
+        <input type="hidden" name="id" value="0" />
+        <div class="form-group col-md-5">
+            <label for="name">Product:</label>
+            <input class="form-control" name="name" />
+        </div>
+        <div class="form-group col-md-5">
+            <label for="description">Description:</label>
+            <input class="form-control" name="description" />
+        </div>
+        <div class="form-group col-md-5">
+            <label for="userId">User Id:</label>
+            <input class="form-control" name="userId" type="number"/>
+        </div>
+        <div class="panel-body">
+            <button type="submit" id="submit" class="btn btn-primary">Save</button>
+            <a id="reset" class="btn btn-primary">Reset</a>
+        </div>
+    </form>
+    <table class="table table-condensed table-striped  col-md-6">
+        <thead><tr><th>Id</th><th>Product</th><th>Description</th><th>User Id</th><th></th></tr></thead>
+        <tbody>
+        </tbody>
+    </table>
+    <script>
+        // get all products
+        async function GetProducts() {
+            // make response and get an answer
+            const response = await fetch("/api/products", {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            // if response is ok
+            if (response.ok === true) {
+                // get data
+                const products = await response.json();
+                let rows = document.querySelector("tbody");
+                products.forEach(product => {
+                    // add elements to the table
+                    rows.append(row(product));
+                });
+            }
+        }
+        // get 1 product
+        async function GetProduct(id) {
+            const response = await fetch("/api/products/" + id, {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const product = await response.json();
+                const form = document.forms["productForm"];
+                form.elements["id"].value = product.id;
+                form.elements["name"].value = product.name;
+                form.elements["description"].value = product.description;
+                form.elements["userId"].value = product.userId;
+            }
+        }
+        // add 1 product
+        async function CreateProduct(productName, productDescription, productUserId) {
+
+            const response = await fetch("api/products", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: productName,
+                    description: productDescription,
+                    userId: parseInt(productUserId, 10)
+                })
+            });
+            if (response.ok === true) {
+                const product = await response.json();
+                reset();
+                document.querySelector("tbody").append(row(product));
+            }
+        }
+        // change product
+        async function EditProduct(productId, productName, productDescription, productUserId) {
+            const response = await fetch("api/products", {
+                method: "PUT",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: parseInt(productId, 10),
+                    name: productName,
+                    description: productDescription,
+                    userId: parseInt(productUserId, 10),
+                })
+            });
+            if (response.ok === true) {
+                const product = await response.json();
+                reset();
+                document.querySelector("tr[data-rowid='" + product.id + "']").replaceWith(row(product));
+            }
+        }
+        // delete product
+        async function DeleteProduct(id) {
+            const response = await fetch("/api/products/" + id, {
+                method: "DELETE",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const product = await response.json();
+                document.querySelector("tr[data-rowid='" + product.id + "']").remove();
+            }
+        }
+
+        // reset form
+        function reset() {
+            const form = document.forms["productForm"];
+            form.reset();
+            form.elements["id"].value = 0;
+        }
+        // create string for table
+        function row(product) {
+
+            const tr = document.createElement("tr");
+            tr.setAttribute("data-rowid", product.id);
+
+            const idTd = document.createElement("td");
+            idTd.append(product.id);
+            tr.append(idTd);
+
+            const nameTd = document.createElement("td");
+            nameTd.append(product.name);
+            tr.append(nameTd);
+
+            const descriptionTd = document.createElement("td");
+            descriptionTd.append(product.description);
+            tr.append(descriptionTd);
+
+            const userIdTd = document.createElement("td");
+            userIdTd.append(product.userId);
+            tr.append(userIdTd);
+
+            const linksTd = document.createElement("td");
+
+            const editLink = document.createElement("a");
+            editLink.setAttribute("data-id", product.id);
+            editLink.setAttribute("style", "cursor:pointer;padding:15px;");
+            editLink.append("Change");
+            editLink.addEventListener("click", e => {
+
+                e.preventDefault();
+                GetProduct(product.id);
+            });
+            linksTd.append(editLink);
+
+            const removeLink = document.createElement("a");
+            removeLink.setAttribute("data-id", product.id);
+            removeLink.setAttribute("style", "cursor:pointer;padding:15px;");
+            removeLink.append("Delete");
+            removeLink.addEventListener("click", e => {
+
+                e.preventDefault();
+                DeleteProduct(product.id);
+            });
+
+            linksTd.append(removeLink);
+            tr.appendChild(linksTd);
+
+            return tr;
+        }
+        // reset value for form
+        document.getElementById("reset").click(function (e) {
+
+            e.preventDefault();
+            reset();
+        })
+
+        // sent form
+        document.forms["productForm"].addEventListener("submit", e => {
+            e.preventDefault();
+            const form = document.forms["productForm"];
+            const id = form.elements["id"].value;
+            const name = form.elements["name"].value;
+            const description = form.elements["description"].value;
+            const userId = form.elements["userId"].value;
+            if (id == 0)
+                CreateProduct(name, description, userId);
+            else
+                EditProduct(id, name, description, userId);
+        });
+
+        // get all products
+        GetProducts();
+
+    </script>
+</body>
+</html>

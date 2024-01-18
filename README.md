@@ -3,7 +3,7 @@ The project was created for studying the microservice architecture.
 * MassTransit framework was used for service communication.
 * Entity framework Core was used for database changes.
 
-#How to run the project
+# How to run the project
 1. Copy repo and open the .sln file
 2. In the Solution properties choose Multiple startup projects and select "Start without debugging" option for ControleService, Goods and Users projects
 3. Select Goods project as a Startup project
